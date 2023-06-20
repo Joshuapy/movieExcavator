@@ -3,13 +3,19 @@
 # Author: joshua
 
 
-import logging
-
-# from scheduler import make_scheduler
+from scheduler import make_scheduler
+from logger import init_logger
 
 
 def main():
-    pass
+    """
+    启动定时器
+    """
+    logger = init_logger()
+    logger.info("program started!")
+
+    sch = make_scheduler()
+    sch.start()
 
 
 if __name__ == "__main__":

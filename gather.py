@@ -1,45 +1,32 @@
 
 # 电影信息收集器，(一个网站一个类处理独特的获取流程,需要产出相同的数据对象)
+
 import re
-from abc import ABC
-from pprint import pprint
+import logging
+import time
 
 import bs4
 import requests
 from pathlib import Path
 from bs4 import BeautifulSoup
 
-from model.movie import Movie, MoviveManager
+# from model.movie import Movie, MoviveManager
+
+logger = logging.getLogger(__name__)
 
 
-class MovieGather(ABC):
-    """
-    电影元数据收集器
-    """
-    movies = []  # list of movie objects
-
-    def save2db(self):
-        """
-        保存数据到db
-        :return:
-        """
-        raise NotImplementedError
-
-    def run(self):
-        """
-        启动入口
-        :return:
-        """
-        raise NotImplementedError
-
-
-class DYTTgather(MovieGather):
+class DYTTgather(object):
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
+        "Referer": "https://www.baidu.com/link?url=u5csmrd0v3OeGNX4MLsOKS6_jZzFV2qsaJyK1Vhvqk3&wd=&eqid=b3b7b46b0002d25200000003649163c7"
+    }
 
     def __init__(self):
         self.base_host = "https://dytt8.net"
         self.pattern = re.compile(r"\d+\.html")  # 数字.html
         self._movie_hash = {}
         self.session = requests.session()
+        self.session.headers.update(self.headers)
 
     def _http_home(self):
         """
@@ -49,8 +36,9 @@ class DYTTgather(MovieGather):
         try:
             resp = self.session.get(self.base_host)
             resp.raise_for_status()
+            logger.info("Access homepage: %s", resp.status_code)
         except Exception as e:
-            print("Access homepage error: %s" % e)
+            logger.error("Access homepage error: %s", e)
         else:
             return resp.text
 
@@ -72,8 +60,7 @@ class DYTTgather(MovieGather):
         """
         return Path(uri).stem
 
-    @staticmethod
-    def tag_a_and_has_href_with_number(tag: BeautifulSoup):
+    def tag_a_and_has_href_with_number(self, tag: BeautifulSoup):
         """
         链接过滤器
         :param tag:
@@ -88,11 +75,14 @@ class DYTTgather(MovieGather):
         """
         tag_bd3l = soup.find(name='div', attrs={'class': "bd3l"})
         if tag_bd3l is None:
-            print("somthing")
+            logger.warning("Parse Failed at 左区-最新电影更新")
             return
 
+        c = 0
         for tag_a in tag_bd3l.find_all(self.tag_a_and_has_href_with_number):
             self._add_tag_a_hash(tag_a)
+            c += 1
+        logger.info("Parse %s uri at 左区-最新电影更新", c)
 
     def _parse_new_movie(self, soup: BeautifulSoup):
         """
@@ -105,29 +95,35 @@ class DYTTgather(MovieGather):
         tag_bd3r = soup.find(name='div', attrs={'class': "bd3r"})
         if tag_bd3r is None:
             print("bd3r is None")
+            logger.warning("Parse failed at 中区-新片")
             return
 
         # 最新电影
         tag_bd3rl = tag_bd3r.find(name='div', attrs={'class': "bd3rl"})
         # 遍历前两个电影列表块(每个块是一个table)
+        c = 0
         if tag_bd3rl:
             top_area2_of_bd3rl = tag_bd3rl.find_all(name='div', attrs={'class': "co_area2"}, limit=2)
             for area in top_area2_of_bd3rl:
                 for tag_a in area.find_all(self.tag_a_and_has_href_with_number):
                     self._add_tag_a_hash(tag_a)
+                    c += 1
+            logger.info("Parse %s uri at 中区-最新精品", c)
         else:
-            print("bd3rl is None")
+            logger.warning("bd3rl is None")
 
-        print("*"*100)
         # 经典推荐
+        c = 0
         tag_bd3rr = tag_bd3r.find(name='div', attrs={'class': "bd3rr"})
         if tag_bd3rr:
             for area in tag_bd3rr.find_all(name='div', attrs={'class': "co_area2"}, limit=2):
                 for tag_a in area.find_all(self.tag_a_and_has_href_with_number):
                     self._add_tag_a_hash(tag_a)
+                    c += 1
+            logger.info("Parse %s uri at 右区-经典推荐", c)
 
         else:
-            print("bd3rr is None")
+            logger.warning("bd3rr is None")
 
     def run(self):
         home_text = self._http_home()
@@ -138,7 +134,13 @@ class DYTTgather(MovieGather):
         self._parse_home_bd3l(soup)
         self._parse_new_movie(soup)
 
-        pprint(self._movie_hash)
-        pprint(len(self._movie_hash))
+        logger.info("Fetch %s uri", len(self._movie_hash))
 
 
+def dytt_gather():
+    start = time.time()
+    try:
+        DYTTgather().run()
+    finally:
+        end = time.time()
+        logger.info("fetch dytt use %.2s s", end - start)
