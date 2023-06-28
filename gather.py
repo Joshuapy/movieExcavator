@@ -4,29 +4,106 @@
 import re
 import logging
 import time
+from pprint import pprint
 
 import bs4
 import requests
 from pathlib import Path
 from bs4 import BeautifulSoup
 
-# from model.movie import Movie, MoviveManager
+from model.movie import Movie
 
 logger = logging.getLogger(__name__)
 
 
-class DYTTgather(object):
+class ParseError(Exception):
+    pass
+
+
+class BaseGather(object):
+    """
+    通用方法收敛
+    """
+    def __init__(self):
+        self.movies = []  # list of Movie obj
+
+    def _init_db(self):
+        pass
+
+    def save2db(self):
+        """
+        电影信息写库
+        每个线程独立db连接，保持独立。
+        写库操作收敛至此，写完之后断开连接。
+        :return:
+        """
+        # db = self._init_db()
+        pass
+
+
+class DyttGather(BaseGather):
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36",
-        "Referer": "https://www.baidu.com/link?url=u5csmrd0v3OeGNX4MLsOKS6_jZzFV2qsaJyK1Vhvqk3&wd=&eqid=b3b7b46b0002d25200000003649163c7"
+        "Referer": "https://www.baidu.com/link?url=u5csmrd0v3OeGNX4MLsOKS6_jZzFV2qsaJyK1Vhvqk3&wd=&eqid=b3b7b46b0002d25200000003649163c7",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
     }
 
     def __init__(self):
+        super().__init__()
         self.base_host = "https://dytt8.net"
         self.pattern = re.compile(r"\d+\.html")  # 数字.html
         self._movie_hash = {}
         self.session = requests.session()
         self.session.headers.update(self.headers)
+
+    def _http_detail(self, uri: str):
+        """
+        请求详情页+解析
+        :return:
+        """
+        header = {'Referer': self.base_host}
+        try:
+            resp = self.session.get(uri, headers=header)
+        except Exception as e:
+            logger.error("Access detail [%s] error: %s", uri, e)
+        else:
+            soup = BeautifulSoup(resp.text, "html.parser")
+            self._parse_detail(soup)
+
+    def _parse_detail(self, soup: BeautifulSoup):
+        """
+        解析详情页
+        1. 内容最近包 div.co_content8
+        :return:
+        """
+        tag_content = soup.find('div', attrs={'class': "co_content8"})
+        if tag_content is None:
+            raise ParseError("Can not fond tag: co_content8!")
+
+        # 初始化Movie对象
+        m = Movie()
+
+        # 字段必填,解析失败直接退出
+        # 下载地址 + 电影名
+        tag_a = tag_content.find('a')
+        if tag_a:
+            m.addr = tag_a.get('href')  # 下载地址
+            _title = tag_a.find('font', string=re.compile(r"点击下载")).string
+            m.title = _title.split()[1]
+        else:
+            raise ParseError("Can not fond tag <a> of download addr!")
+
+        tag_img = tag_content.find('img')
+        m.cover_addr = tag_img.get('src')  # 封面地址
+        tag_td = tag_img.parent
+        # for child in tag_td.descendants:
+        conent_list = [str(c.string).strip() for c in tag_td.children if c.string and str(c.string).strip()]
+        print(conent_list)
+        # for n, child in enumerate(tag_td.children):
+        #     if child.string:
+        #         print(n, repr(child.string))
+
+        pprint(m.__dict__)
 
     def _http_home(self):
         """
@@ -130,17 +207,32 @@ class DYTTgather(object):
         if home_text is None:
             return
 
+        # 首页采集最新电影地址
         soup = BeautifulSoup(home_text, "html.parser")
         self._parse_home_bd3l(soup)
         self._parse_new_movie(soup)
 
-        logger.info("Fetch %s uri", len(self._movie_hash))
+        logger.info("Fetch %s uri from homepage.", len(self._movie_hash))
+
+        if self._movie_hash:
+            # TODO: 暂时用循环,后续改成并发
+            for hash_id, uri in self._movie_hash.items():
+                try:
+                    self._http_detail(uri)
+                except ParseError as e:
+                    logger.warning(
+                        "Parse DetailPage: [%s] error: %s",
+                        hash_id, e)
+                except Exception as e:
+                    logger.exception(
+                        "Access or Parse DetailPage error: hash_id: %s. msg: %s",
+                        hash_id, e)
 
 
 def dytt_gather():
     start = time.time()
     try:
-        DYTTgather().run()
+        DyttGather().run()
     finally:
         end = time.time()
         logger.info("fetch dytt use %.2s s", end - start)

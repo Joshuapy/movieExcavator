@@ -10,9 +10,9 @@ class Movie(object):
         3: "下载完成"
     }
 
-    def __init__(self, title: str):
+    def __init__(self):
         self.db_id = None
-        self.title = title                  # 电影名
+        self.title = None                   # 电影名
         self.hash = None                    # 唯一标识
         self.release_time = None            # 发布时间
         self.cover_addr = None              # 封面url

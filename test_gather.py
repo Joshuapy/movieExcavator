@@ -1,7 +1,7 @@
 
 
 from bs4 import BeautifulSoup
-from gather import DYTTgather
+from gather import DyttGather
 
 
 class TestGather(object):
@@ -23,3 +23,9 @@ class TestGather(object):
         d = DYTTgather()
         result = d.tag_a_and_has_href_with_number(tag)
         assert result is False
+
+    def test_parse_detail(self):
+        with open('test/dytt_detail_page2.html') as f:
+            soup = BeautifulSoup(f.read(), "html.parser")
+            DyttGather()._parse_detail(soup=soup)
+            assert 1 > 0
