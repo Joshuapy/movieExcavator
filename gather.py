@@ -70,6 +70,26 @@ class DyttGather(BaseGather):
             soup = BeautifulSoup(resp.text, "html.parser")
             self._parse_detail(soup)
 
+
+    @staticmethod
+    def _parse_line(m: Movie, tokens: list):
+        if not tokens:
+            return
+        token_string = " ".join(tokens)
+        attr_pattern_dict = {
+            # 'title': r'^◎译\s*名\s*(.*)',
+            'show_time': r'^◎上映日期\s*(.*)',
+            'release_time': r'^◎年\s*代\s*(.*)',
+            'area': r'^◎产\s*地\s*(.*)',
+            'describtion': r'^◎简\s*介\s*(.*)',
+            'tags': r'^◎类\s*别\s*(.*)',
+            'score': r'^◎豆瓣评分\s*(.*)',
+        }
+        for attr, p in attr_pattern_dict.items():
+            match_result = re.match(p, token_string)
+            if match_result:
+                m.__setattr__(attr, match_result.group(1))
+
     def _parse_detail(self, soup: BeautifulSoup):
         """
         解析详情页
@@ -97,8 +117,20 @@ class DyttGather(BaseGather):
         m.cover_addr = tag_img.get('src')  # 封面地址
         tag_td = tag_img.parent
         # for child in tag_td.descendants:
-        conent_list = [str(c.string).strip() for c in tag_td.children if c.string and str(c.string).strip()]
-        print(conent_list)
+        content_list = [str(c.string).strip() for c in tag_td.children if c.string and str(c.string).strip()]
+        token = []
+        for line in tag_td.contents[:-1]:
+            if line.string and str(line.string).strip():
+                _content = str(line.string).strip()
+                if _content[0] == '◎':
+                    self._parse_line(m, token)
+                    token = []
+                    token.append(_content)
+                else:
+                    token.append(_content)
+        if token:
+            self._parse_line(m, token)
+
         # for n, child in enumerate(tag_td.children):
         #     if child.string:
         #         print(n, repr(child.string))
