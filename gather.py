@@ -56,7 +56,7 @@ class DyttGather(BaseGather):
         self.session = requests.session()
         self.session.headers.update(self.headers)
 
-    def _http_detail(self, uri: str):
+    def _http_detail(self, hash_id, uri: str):
         """
         请求详情页+解析
         :return:
@@ -64,11 +64,14 @@ class DyttGather(BaseGather):
         header = {'Referer': self.base_host}
         try:
             resp = self.session.get(uri, headers=header)
+            resp.encoding = resp.apparent_encoding
         except Exception as e:
             logger.error("Access detail [%s] error: %s", uri, e)
         else:
+            m = Movie()
+            m.hash = hash_id
             soup = BeautifulSoup(resp.text, "html.parser")
-            self._parse_detail(soup)
+            self._parse_detail(m ,soup)
 
 
     @staticmethod
@@ -77,7 +80,6 @@ class DyttGather(BaseGather):
             return
         token_string = " ".join(tokens)
         attr_pattern_dict = {
-            'title': r'^◎译\s*名\s*(.*)',
             'show_time': r'^◎上映日期\s*(.*)',
             'release_time': r'^◎年\s*代\s*(.*)',
             'area': r'^◎产\s*地\s*(.*)',
@@ -90,7 +92,7 @@ class DyttGather(BaseGather):
             if match_result:
                 m.__setattr__(attr, match_result.group(1))
 
-    def _parse_detail(self, soup: BeautifulSoup):
+    def _parse_detail(self,m: Movie, soup: BeautifulSoup):
         """
         解析详情页
         1. 内容最近包 div.co_content8
@@ -100,28 +102,25 @@ class DyttGather(BaseGather):
         if tag_content is None:
             raise ParseError("Can not fond tag: co_content8!")
 
-        # 初始化Movie对象
-        m = Movie()
-
         # 字段必填,解析失败直接退出
         # 下载地址 + 电影名
         tag_a = tag_content.find('a')
         if tag_a:
             m.addr = tag_a.get('href')  # 下载地址
-            # _title = tag_a.find('font', string=re.compile(r"点击下载")).string
-            # m.title = _title.split()[1]
+            _title = tag_a.find('font', string=re.compile(r"点击下载")).string
+            m.title = _title.split()[1]
         else:
             raise ParseError("Can not fond tag <a> of download addr!")
 
         tag_img = tag_content.find('img')
         m.cover_addr = tag_img.get('src')  # 封面地址
+
         tag_td = tag_img.parent
-        # for child in tag_td.descendants:
-        content_list = [str(c.string).strip() for c in tag_td.children if c.string and str(c.string).strip()]
         token = []
         for line in tag_td.contents[:-1]:
             if line.string and str(line.string).strip():
                 _content = str(line.string).strip()
+                logger.debug("%s", _content)
                 if _content[0] == '◎':
                     self._parse_line(m, token)
                     token = []
@@ -246,7 +245,7 @@ class DyttGather(BaseGather):
             # TODO: 暂时用循环,后续改成并发
             for hash_id, uri in self._movie_hash.items():
                 try:
-                    self._http_detail(uri)
+                    self._http_detail(hash_id, uri)
                 except ParseError as e:
                     logger.warning(
                         "Parse DetailPage: [%s] error: %s",
