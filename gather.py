@@ -77,11 +77,11 @@ class DyttGather(BaseGather):
             return
         token_string = " ".join(tokens)
         attr_pattern_dict = {
-            # 'title': r'^◎译\s*名\s*(.*)',
+            'title': r'^◎译\s*名\s*(.*)',
             'show_time': r'^◎上映日期\s*(.*)',
             'release_time': r'^◎年\s*代\s*(.*)',
             'area': r'^◎产\s*地\s*(.*)',
-            'describtion': r'^◎简\s*介\s*(.*)',
+            'description': r'^◎简\s*介\s*(.*)',
             'tags': r'^◎类\s*别\s*(.*)',
             'score': r'^◎豆瓣评分\s*(.*)',
         }
@@ -108,8 +108,8 @@ class DyttGather(BaseGather):
         tag_a = tag_content.find('a')
         if tag_a:
             m.addr = tag_a.get('href')  # 下载地址
-            _title = tag_a.find('font', string=re.compile(r"点击下载")).string
-            m.title = _title.split()[1]
+            # _title = tag_a.find('font', string=re.compile(r"点击下载")).string
+            # m.title = _title.split()[1]
         else:
             raise ParseError("Can not fond tag <a> of download addr!")
 
@@ -130,10 +130,6 @@ class DyttGather(BaseGather):
                     token.append(_content)
         if token:
             self._parse_line(m, token)
-
-        # for n, child in enumerate(tag_td.children):
-        #     if child.string:
-        #         print(n, repr(child.string))
 
         pprint(m.__dict__)
 

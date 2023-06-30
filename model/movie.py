@@ -20,7 +20,7 @@ class Movie(object):
         self.tags = None                    # 类型标签
         self.show_time = None               # 上映时间
         self.score = None                   # 机构评分
-        self.describtion = None             # 简介
+        self.description = None             # 简介
         self.addr = None                    # 下载地址
         self.area = None                    # 产地
         self.status = None                  # 下载状态
