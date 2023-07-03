@@ -11,7 +11,7 @@ import requests
 from pathlib import Path
 from bs4 import BeautifulSoup
 
-from model.movie import Movie
+from model.movie import Movie, MoviveDbManager
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +23,17 @@ class ParseError(Exception):
 class BaseGather(object):
     """
     通用方法收敛
+    数据库交互都在本抽象类种收敛和规范
     """
     def __init__(self):
         self.movies = []  # list of Movie obj
+        self._movie_dbmanager = MoviveDbManager()
 
-    def _init_db(self):
-        pass
+    def _add_movie(self, m: Movie):
+        if m.title and m.hash and m.addr:
+            self.movies.append(m)
+        else:
+            logger.warning("Incomplete Movie: %s", m.__dict__)
 
     def save2db(self):
         """
@@ -37,8 +42,11 @@ class BaseGather(object):
         写库操作收敛至此，写完之后断开连接。
         :return:
         """
-        # db = self._init_db()
-        pass
+        try:
+            c = self._movie_dbmanager.save(data=self.movies)
+            logger.info("Save %s rows to db.", c)
+        except Exception as e:
+            logger.exception("Save rows to db error: %s", e)
 
 
 class DyttGather(BaseGather):
@@ -71,7 +79,7 @@ class DyttGather(BaseGather):
             m = Movie()
             m.hash = hash_id
             soup = BeautifulSoup(resp.text, "html.parser")
-            self._parse_detail(m ,soup)
+            self._parse_detail(m, soup)
 
 
     @staticmethod
@@ -92,7 +100,7 @@ class DyttGather(BaseGather):
             if match_result:
                 m.__setattr__(attr, match_result.group(1))
 
-    def _parse_detail(self,m: Movie, soup: BeautifulSoup):
+    def _parse_detail(self, m: Movie, soup: BeautifulSoup):
         """
         解析详情页
         1. 内容最近包 div.co_content8
@@ -107,7 +115,7 @@ class DyttGather(BaseGather):
         tag_a = tag_content.find('a')
         if tag_a:
             m.addr = tag_a.get('href')  # 下载地址
-            _title = tag_a.find('font', string=re.compile(r"点击下载")).string
+            _title = tag_a.find('font', string=re.compile(r"点击下载|磁力链")).string
             m.title = _title.split()[1]
         else:
             raise ParseError("Can not fond tag <a> of download addr!")
@@ -130,7 +138,8 @@ class DyttGather(BaseGather):
         if token:
             self._parse_line(m, token)
 
-        pprint(m.__dict__)
+        # pprint(m.__dict__)
+        self._add_movie(m)
 
     def _http_home(self):
         """
@@ -244,6 +253,9 @@ class DyttGather(BaseGather):
         if self._movie_hash:
             # TODO: 暂时用循环,后续改成并发
             for hash_id, uri in self._movie_hash.items():
+                # 判断数据库是否已存在,如果存在则忽略
+                if self._movie_dbmanager.is_exists(hash_id):
+                    continue
                 try:
                     self._http_detail(hash_id, uri)
                 except ParseError as e:
@@ -254,6 +266,8 @@ class DyttGather(BaseGather):
                     logger.exception(
                         "Access or Parse DetailPage error: hash_id: %s. msg: %s",
                         hash_id, e)
+        if self.movies:
+            self.save2db()
 
 
 def dytt_gather():
