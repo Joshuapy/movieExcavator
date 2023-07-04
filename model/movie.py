@@ -55,11 +55,18 @@ class MoviveDbManager(object):
         return row
 
     @staticmethod
+    def query_status(status: int = 0):
+        sql = "select * from movie where status = ? ;"
+        row = query_db(sql, parameters=(status,))
+        return row
+
+    @staticmethod
     def is_exists(hash_id: str) -> bool:
         sql = "SELECT hash FROM movie WHERE hash = ? ;"
         parameters = (hash_id, )
         rows = query_db(sql, parameters)
         return len(rows) > 0
+
 
     @staticmethod
     def save(data: Sequence[Movie]) -> int:
