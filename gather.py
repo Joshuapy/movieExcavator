@@ -5,6 +5,7 @@ import re
 import logging
 import time
 from pprint import pprint
+from urllib.parse import urljoin
 
 import bs4
 import requests
@@ -141,13 +142,28 @@ class DyttGather(BaseGather):
         # pprint(m.__dict__)
         self._add_movie(m)
 
-    def _http_home(self):
+    @staticmethod
+    def meta_redirect(original_url, text):
+        soup = BeautifulSoup(text, "html.parser")
+        result = soup.find("meta", attrs={"http-equiv": "refresh"})
+        if result:
+            wait, content = result["content"].split(";")
+            if content.strip().lower().startswith("url="):
+                url = content.strip()[4:]
+                if not url.startswith("http"):
+                    url = urljoin(original_url, url)
+                logger.debug("Meta redirect: %s", url)
+                return url
+        return None
+
+    def _http_home(self, url: str = None):
         """
         请求首页
         :return:
         """
+        home_url = url or self.base_host
         try:
-            resp = self.session.get(self.base_host)
+            resp = self.session.get(home_url)
             resp.raise_for_status()
             logger.info("Access homepage: %s", resp.status_code)
         except Exception as e:
@@ -242,6 +258,11 @@ class DyttGather(BaseGather):
         home_text = self._http_home()
         if home_text is None:
             return
+        # 处理 meta refrash tag
+        url = self.meta_redirect(self.base_host, home_text)
+        while url:
+            home_text = self._http_home(url)
+            url = self.meta_redirect(url, home_text)
 
         # 首页采集最新电影地址
         soup = BeautifulSoup(home_text, "html.parser")

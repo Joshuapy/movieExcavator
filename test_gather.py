@@ -2,7 +2,7 @@
 
 from bs4 import BeautifulSoup
 from gather import DyttGather
-
+from model.movie import Movie
 
 
 class TestGather(object):
@@ -26,12 +26,20 @@ class TestGather(object):
         assert result is False
 
     def test_parse_detail(self):
+        m = Movie()
         with open('test/dytt_detail_page2.html') as f:
             soup = BeautifulSoup(f.read(), "html.parser")
-            DyttGather()._parse_detail(soup=soup)
+            DyttGather()._parse_detail(m, soup=soup)
             assert 1 > 0
 
     def test_save2db(self):
         data = ()
         d = DyttGather()
         d.save2db()
+
+    def test_meta_redirect(self):
+        base_url = "https://dytt8.net"
+        text = '<meta http-equiv="refresh" content="0;URL=index2.htm">'
+        url = DyttGather.meta_redirect(base_url, text)
+        print(url)
+        assert url == "https://dytt8.net/index2.htm"
