@@ -2,7 +2,7 @@
 
 
 from logger import init_logger
-from database import init_table, modified_db, query_db, TABLE_NAME_OF_MOVIE
+from database import init_table, modified_db, query_db
 
 init_logger()
 

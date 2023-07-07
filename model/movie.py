@@ -67,7 +67,6 @@ class MoviveDbManager(object):
         rows = query_db(sql, parameters)
         return len(rows) > 0
 
-
     @staticmethod
     def save(data: Sequence[Movie]) -> int:
         """

@@ -1,4 +1,4 @@
-
+import msilib.schema
 # 电影信息收集器，(一个网站一个类处理独特的获取流程,需要产出相同的数据对象)
 
 import re
@@ -82,7 +82,6 @@ class DyttGather(BaseGather):
             soup = BeautifulSoup(resp.text, "html.parser")
             self._parse_detail(m, soup)
 
-
     @staticmethod
     def _parse_line(m: Movie, tokens: list):
         if not tokens:
@@ -94,12 +93,21 @@ class DyttGather(BaseGather):
             'area': r'^◎产\s*地\s*(.*)',
             'description': r'^◎简\s*介\s*(.*)',
             'tags': r'^◎类\s*别\s*(.*)',
-            'score': r'^◎豆瓣评分\s*(.*)',
+            'score': r'^◎豆瓣评分\s*(.*)\/10\s*from.*',
         }
         for attr, p in attr_pattern_dict.items():
             match_result = re.match(p, token_string)
             if match_result:
-                m.__setattr__(attr, match_result.group(1))
+                value = match_result.group(1)
+                if attr == "score":
+                    try:
+                        value = float(value)
+                    except:
+                        value = 0.0
+                if attr == "tags":
+                    value = ",".join(i.strip() for i in value.split('/'))
+
+                m.__setattr__(attr, value)
 
     def _parse_detail(self, m: Movie, soup: BeautifulSoup):
         """
@@ -139,7 +147,7 @@ class DyttGather(BaseGather):
         if token:
             self._parse_line(m, token)
 
-        # pprint(m.__dict__)
+        pprint(m.__dict__)
         self._add_movie(m)
 
     @staticmethod
@@ -282,6 +290,10 @@ class DyttGather(BaseGather):
                 except ParseError as e:
                     logger.warning(
                         "Parse DetailPage: [%s] error: %s",
+                        hash_id, e)
+                except AttributeError as e:
+                    logger.error(
+                        "Access or Parse DetailPage error: hash_id: %s. msg: %s",
                         hash_id, e)
                 except Exception as e:
                     logger.exception(
