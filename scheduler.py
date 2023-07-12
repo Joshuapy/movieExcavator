@@ -2,10 +2,11 @@
 # 任务调度器初始化
 
 from apscheduler.executors.pool import ThreadPoolExecutor
-from apscheduler.schedulers.background import BackgroundScheduler, BlockingScheduler
+from apscheduler.schedulers.background import BlockingScheduler
 
 # tasks
 from gather import dytt_gather
+from judgment import run as judge_movie
 
 
 def make_scheduler():
@@ -26,5 +27,6 @@ def make_scheduler():
     }
 
     sch = BlockingScheduler(**config)
-    sch.add_job(dytt_gather, "cron", minute='*/5')
+    sch.add_job(dytt_gather, "cron", hour="21", day="*")
+    sch.add_job(judge_movie(), "cron", minutes="30", hour="21", day="*")
     return sch

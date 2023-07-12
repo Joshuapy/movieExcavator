@@ -1,4 +1,3 @@
-import msilib.schema
 # 电影信息收集器，(一个网站一个类处理独特的获取流程,需要产出相同的数据对象)
 
 import re
@@ -108,6 +107,8 @@ class DyttGather(BaseGather):
                     value = ",".join(i.strip() for i in value.split('/'))
 
                 m.__setattr__(attr, value)
+        if m.score is None:
+            m.score = 0.0
 
     def _parse_detail(self, m: Movie, soup: BeautifulSoup):
         """
@@ -147,7 +148,6 @@ class DyttGather(BaseGather):
         if token:
             self._parse_line(m, token)
 
-        pprint(m.__dict__)
         self._add_movie(m)
 
     @staticmethod

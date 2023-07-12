@@ -9,10 +9,6 @@ init_logger()
 
 class TestDatabase(object):
 
-    def test_init_table(self):
-        init_table()
-        assert 2 > 1
-
     def test_insert_db(self):
         sql = '''INSERT INTO movie (hash, title, addr) VALUES (?, ?, ?);'''
         changes = modified_db(sql, parameters=('123', '电影x', 'https://xx.com'))

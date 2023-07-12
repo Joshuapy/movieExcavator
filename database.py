@@ -41,11 +41,11 @@ def modified_db(sql, parameters=(), many=False) -> int:
             else:
                 cursor.execute(sql, parameters)
             conn.commit()
-    logger.debug("DB modified %s", conn.total_changes)
-    return conn.total_changes
+            logger.debug("DB modified %s", conn.total_changes)
+            return conn.total_changes
 
 
-def init_table(tables_ddl: dict[str:str]):
+def init_table(tables_ddl: dict):
     """
     初始化表结构，只执行一次
     """

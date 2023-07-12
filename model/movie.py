@@ -4,16 +4,23 @@ from typing import Sequence
 
 from database import query_db, modified_db
 
+MOVIE_ST_PAUSE = 0
+MOVIE_ST_DISLIKE = 1
+MOVIE_ST_LIKE = 2
+MOVIE_ST_DOWNLOADING = 3
+MOVIE_ST_DONE = 4
+
 
 class Movie(object):
     status_dict = {
-        0: "待评估",
-        1: "不喜欢",
-        2: "下载中",
-        3: "下载完成"
+        MOVIE_ST_PAUSE: "待评估",
+        MOVIE_ST_DISLIKE: "不喜欢",
+        MOVIE_ST_LIKE: "想看",
+        MOVIE_ST_DOWNLOADING: "下载中",
+        MOVIE_ST_DONE: "下载完成"
     }
 
-    def __init__(self, status: int = 0):
+    def __init__(self, status: int = MOVIE_ST_PAUSE):
         self.title = None           # 电影名
         self.hash = None            # 唯一标识
         self.addr = None            # 下载地址
@@ -26,6 +33,15 @@ class Movie(object):
         self.description = None     # 简介
         self.area = None            # 产地
         self.status = status        # 下载状态
+
+    @classmethod
+    def create(cls, hash_id, title, **kwargs):
+        m = cls()
+        m.hash = hash_id
+        m.title = title
+        for key, value in kwargs.items():
+            m.__setattr__(key, value)
+        return m
 
 
 class MoviveDbManager(object):
@@ -55,10 +71,18 @@ class MoviveDbManager(object):
         return row
 
     @staticmethod
-    def query_status(status: int = 0):
-        sql = "select * from movie where status = ? ;"
-        row = query_db(sql, parameters=(status,))
-        return row
+    def query_status(status: int = MOVIE_ST_PAUSE) -> list:
+        sql = """SELECT hash, title, tags, score, status FROM movie
+         where status = ? order by score;"""
+        rows = query_db(sql, parameters=(status,))
+        return rows
+
+    @staticmethod
+    def update_status(movies: list) -> int:
+        sql = """
+        UPDATE movie SET status = :status where hash = :hash; """
+        count = modified_db(sql, movies, many=True)
+        return count
 
     @staticmethod
     def is_exists(hash_id: str) -> bool:

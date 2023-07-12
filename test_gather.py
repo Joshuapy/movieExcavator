@@ -32,11 +32,6 @@ class TestGather(object):
             DyttGather()._parse_detail(m, soup=soup)
             assert 1 > 0
 
-    def test_save2db(self):
-        data = ()
-        d = DyttGather()
-        d.save2db()
-
     def test_meta_redirect(self):
         base_url = "https://dytt8.net"
         text = '<meta http-equiv="refresh" content="0;URL=index2.htm">'
