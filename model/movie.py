@@ -44,7 +44,7 @@ class Movie(object):
         return m
 
 
-class MoviveDbManager(object):
+class MovieDbManager(object):
     """
     数据库交互收敛到此类
     """
@@ -106,3 +106,8 @@ class MoviveDbManager(object):
         _data = (m.__dict__ for m in data)
         count = modified_db(sql, _data, many=True)
         return count
+
+
+DDL = {
+    "movie": MovieDbManager.DDL,
+}

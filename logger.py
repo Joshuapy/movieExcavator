@@ -14,7 +14,7 @@ def init_logger(log_dir: str = "logs") -> logging.Logger:
     设置全局logger
     :return:
     """
-    level = logging.DEBUG
+    level = logging.INFO
     os.makedirs(log_dir, exist_ok=True)
     logfile = os.path.join(log_dir, logfilename)
 

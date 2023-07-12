@@ -1,0 +1,6 @@
+*.log
+movie.db
+test_*.py
+test
+.venv
+debug.py

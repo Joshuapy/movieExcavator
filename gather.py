@@ -11,7 +11,7 @@ import requests
 from pathlib import Path
 from bs4 import BeautifulSoup
 
-from model.movie import Movie, MoviveDbManager
+from model.movie import Movie, MovieDbManager
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +27,7 @@ class BaseGather(object):
     """
     def __init__(self):
         self.movies = []  # list of Movie obj
-        self._movie_dbmanager = MoviveDbManager()
+        self._movie_dbmanager = MovieDbManager()
 
     def _add_movie(self, m: Movie):
         if m.title and m.hash and m.addr:
@@ -58,7 +58,7 @@ class DyttGather(BaseGather):
 
     def __init__(self):
         super().__init__()
-        self.base_host = "https://dytt8.net"
+        self.base_host = "https://www.dytt8.net"
         self.pattern = re.compile(r"\d+\.html")  # 数字.html
         self._movie_hash = {}
         self.session = requests.session()

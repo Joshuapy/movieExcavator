@@ -8,7 +8,7 @@
 import logging
 from collections import namedtuple
 
-from model.movie import (MoviveDbManager, MOVIE_ST_LIKE, MOVIE_ST_DISLIKE,
+from model.movie import (MovieDbManager, MOVIE_ST_LIKE, MOVIE_ST_DISLIKE,
                          MOVIE_ST_PAUSE)
 
 
@@ -97,7 +97,7 @@ def get_movies():
     查询待评审的电影条目（status=0）
     return: list of SimpleMovie
     """
-    manager = MoviveDbManager()
+    manager = MovieDbManager()
     rows = manager.query_status(status=MOVIE_ST_PAUSE)
     logger.info("Got %s movies.", len(rows))
     return [SimpleMovie(*item) for item in rows]
@@ -107,7 +107,7 @@ def update_movie_status(movies: list) -> None:
     """
     回写选中电影的状态
     """
-    manager = MoviveDbManager()
+    manager = MovieDbManager()
     count = manager.update_status([item.__dict__ for item in movies])
     logger.info("update %s movie status.", count)
 

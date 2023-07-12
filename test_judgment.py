@@ -1,6 +1,6 @@
 
 
-from model.movie import MoviveDbManager, Movie
+from model.movie import MovieDbManager, Movie
 from judgment import get_movies, TagsBackends
 
 
@@ -13,7 +13,7 @@ class TestJudgment(object):
 
     def test_update_status(self):
         data = []
-        manager = MoviveDbManager()
+        manager = MovieDbManager()
         manager.update_status(data)
 
     def test_tagsbackend(self):

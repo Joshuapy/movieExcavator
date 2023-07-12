@@ -1,18 +1,21 @@
 # 数据库Sqlite3 操作  -  函数编程
 
 import logging
+import os.path
 import sqlite3
 from contextlib import closing
 
 logger = logging.getLogger(__name__)
 
 
-
 def make_connection() -> sqlite3.Connection:
     """
     创建连接
     """
-    db_file = "movies.db"
+    filename = "movies.db"
+    db_path = os.path.join(os.path.abspath("."), "data")
+    os.makedirs(db_path, exist_ok=True)
+    db_file = os.path.join(db_path, filename)
     return sqlite3.connect(db_file)
 
 
@@ -47,7 +50,7 @@ def modified_db(sql, parameters=(), many=False) -> int:
 
 def init_table(tables_ddl: dict):
     """
-    初始化表结构，只执行一次
+    初始化表结构， 幂等
     """
     for name, sql in tables_ddl.items():
         changes = modified_db(sql)
@@ -55,7 +58,3 @@ def init_table(tables_ddl: dict):
             logger.info("Create %s table OK.", name)
 
 
-if __name__ == '__main__':
-    from model.movie import MoviveDbManager
-    tables = {"movie": MoviveDbManager.DDL}
-    init_table(tables)

@@ -5,6 +5,8 @@
 
 from scheduler import make_scheduler
 from logger import init_logger
+from database import init_table
+from model.movie import DDL
 
 
 def main():
@@ -13,6 +15,7 @@ def main():
     """
     logger = init_logger()
     logger.info("program started!")
+    init_table(DDL)
 
     sch = make_scheduler()
     sch.start()
