@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.8-slim
 
 MAINTAINER joshuapy@163.com
 
@@ -10,4 +10,4 @@ COPY . /app
 
 RUN pip install -U pip && pip install -r requirements.txt
 
-CMD ['python' 'main.py']
+CMD ["sh", "-c", "python main.py"]
