@@ -1,6 +1,7 @@
 
 # 电影对象模型
 from typing import Sequence
+import datetime
 
 from database import query_db, modified_db
 
@@ -33,6 +34,7 @@ class Movie(object):
         self.description = None     # 简介
         self.area = None            # 产地
         self.status = status        # 下载状态
+        self.create_time = None     # 抓取日期
 
     @classmethod
     def create(cls, hash_id, title, **kwargs):
@@ -43,6 +45,17 @@ class Movie(object):
             m.__setattr__(key, value)
         return m
 
+    @staticmethod
+    def format_today():
+        return str(datetime.date.today())
+
+    def dump_2_dict(self):
+        """
+        额外的填充操作可以放在这里
+        """
+        self.create_time = self.format_today()
+        return self.__dict__
+
 
 class MovieDbManager(object):
     """
@@ -51,16 +64,17 @@ class MovieDbManager(object):
     DDL = '''CREATE TABLE if not exists movie (
                 hash TEXT PRIMARY KEY,
                 title TEXT NOT NULL,
+                tags TEXT,
                 release_time TEXT,
                 cover_addr TEXT,
                 cover_path TEXT,
-                tags TEXT,
                 show_time TEXT,
                 score REAL,
                 description TEXT,
                 addr TEXT NOT NULL,
                 area TEXT,
-                status INTEGER);'''
+                status INTEGER,
+                create_time TEXT);'''
     # _table_name = "movie"
     _model = Movie
 
@@ -100,10 +114,11 @@ class MovieDbManager(object):
         """
         sql = '''INSERT INTO movie (hash, title, release_time,
         cover_addr, cover_path, tags, show_time, score,
-        description, addr, area, status) 
+        description, addr, area, status, create_time) 
         VALUES (:hash,:title,:release_time,:cover_addr,:cover_path,:tags,
-        :show_time, :score, :description, :addr, :area, :status);'''
-        _data = (m.__dict__ for m in data)
+        :show_time, :score, :description, :addr, :area, :status,
+        :create_time);'''
+        _data = (m.dump_2_dict() for m in data)
         count = modified_db(sql, _data, many=True)
         return count
 

@@ -121,14 +121,17 @@ def run():
     # 获得状态是「待评审」(0)的数据, 并依次判断
     """
     movies = get_movies()
+    loved_count = 0
     if movies:
         for movie in movies:
             for backend in JUDGEMENT_BACKENDS:
                 if backend().check(movie):
                     movie.status = MOVIE_ST_LIKE
+                    loved_count += 1
                     break
             else:
                 movie.status = MOVIE_ST_DISLIKE
 
+        logger.info("Got %s loved movies.", loved_count)
         update_movie_status(movies)
 

@@ -3,4 +3,6 @@
 .idea/*
 logs/*
 movies.db
+<<<<<<< Updated upstream
 bin/*
+.DS_store
