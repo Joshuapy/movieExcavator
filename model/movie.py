@@ -68,6 +68,7 @@ class MovieDbManager(object):
                 release_time TEXT,
                 cover_addr TEXT,
                 cover_path TEXT,
+                movie_path TEXT,
                 show_time TEXT,
                 score REAL,
                 description TEXT,
@@ -92,11 +93,28 @@ class MovieDbManager(object):
         return rows
 
     @staticmethod
+    def query_liked_movies() -> list:
+        status = MOVIE_ST_LIKE
+        sql = """SELECT hash, title, cover_addr, addr FROM movie
+         where status = ? ;"""
+        rows = query_db(sql, parameters=(status,))
+        return rows
+
+    @staticmethod
     def update_status(movies: list) -> int:
         sql = """
         UPDATE movie SET status = :status where hash = :hash; """
         count = modified_db(sql, movies, many=True)
         return count
+
+    @staticmethod
+    def update_download_stats(movies: list) -> int:
+        sql = """
+        UPDATE movie SET cover_path = :cover_path, movie_path = :movie_path,
+        status = :status where hash = :hash; """
+        count = modified_db(sql, movies, many=True)
+        return count
+
 
     @staticmethod
     def is_exists(hash_id: str) -> bool:

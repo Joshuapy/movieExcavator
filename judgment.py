@@ -92,13 +92,13 @@ class TagsBackends(BaseBackends):
         return total_weight
 
 
-def get_movies():
+def get_movies(status=MOVIE_ST_PAUSE):
     """
     查询待评审的电影条目（status=0）
     return: list of SimpleMovie
     """
     manager = MovieDbManager()
-    rows = manager.query_status(status=MOVIE_ST_PAUSE)
+    rows = manager.query_status(status=status)
     logger.info("Got %s movies.", len(rows))
     return [SimpleMovie(*item) for item in rows]
 

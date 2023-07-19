@@ -1,43 +1,48 @@
 # aria2 client
 # 2023 7 4
+import logging
 import time
-from pprint import pprint
-from typing import Any
 
 import requests
 
 
-class Client(object):
+logger = logging.getLogger(__name__)
+
+
+class Aria2Client(object):
     """
     aria2 client
-    参考：https://aria2.github.io/ma
-    nual/en/html/aria2c.html#methods
-    https://github.com/pawamoy/aria2p/blob/master/src/aria2p/client.py
+    参考：https://aria2.github.io/manual/en/html/aria2c.html#methodshttps://github.com/pawamoy/aria2p/blob/master/src/aria2p/client.py
     """
 
-    def __init__(self, host: str, port: int = 6800, secret: str = ""):
+    def __init__(self, host: str, port: int = 6800, secret: str = None):
         self.host = host
         self.port = port
         self.secret = secret
+        self.session = requests.session()
 
     @property
     def server_addr(self) -> str:
+        """
+        例如：http://ariang.joshua.com:6800/jsonrpc
+        """
         return f"{self.host}:{self.port}/jsonrpc"
 
-    def call(self, method: str, params: list = None, msg_id: str = None, need_secret: bool = True) -> dict:
+    def call(self, method: str, params: list = None, msg_id: str = None,
+             need_secret: bool = True) -> dict:
         params = params or []
         if need_secret:
             params.insert(0, f"token:{self.secret}")
 
         payload = self.make_payload(method, params, msg_id)
-        pprint(payload)
+        logger.debug("payload: %s", payload)
         resp = self._post(payload)
         return resp
 
     def _post(self, payload: dict):
-        resp = requests.post(self.server_addr, json=payload).json()
+        resp = self.session.post(self.server_addr, json=payload).json()
+        logger.debug("response: %s", resp)
         if 'error' in resp:
-            print(resp)
             raise Exception("Error code:{code} {message}".format(**resp['error']))
         return resp['result']
 
@@ -47,7 +52,7 @@ class Client(object):
         if msg_id:
             payload['id'] = msg_id
         else:
-            payload['id'] = "-1"
+            payload['id'] = str(int(time.time() * 1000))
         if params:
             payload['params'] = params
 
@@ -58,19 +63,19 @@ class Client(object):
         r = self.call(method)
         return r
 
-    def add_uri(self, addr):
+    def add_uri(self, addr) -> str:
         """
         添加单个下载任务
+        return: aria2 任务ID gid
         """
         method = "aria2.addUri"
         params = [[addr]]
-        msg_id = "msg"
-        r = self.call(method, params=params, msg_id=msg_id, need_secret=True)
+        r = self.call(method, params=params, need_secret=True)
         return r
 
     def tell_status(self, gid: str) -> dict:
         method = "aria2.tellStatus"
+        # params = [gid, ['gid', 'status', 'errorMessage']]
         params = [gid]
-        msg_id = "myid"
-        r = self.call(method, params, msg_id, need_secret=True)
+        r = self.call(method, params, need_secret=True)
         return r
