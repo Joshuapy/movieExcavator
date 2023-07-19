@@ -30,5 +30,5 @@ def make_scheduler():
     sch = BlockingScheduler(**config)
     sch.add_job(dytt_gather, "cron", hour="20", day="*")
     sch.add_job(judge_movie, "cron", minute="30", hour="20", day="*")
-    sch.add_job(download_movie, "cron", minute="40", hour="23", day="*")
+    sch.add_job(download_movie, "cron", minute="40", hour="10", day="*")
     return sch
