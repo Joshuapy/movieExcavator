@@ -93,12 +93,20 @@ class MovieDbManager(object):
         return rows
 
     @staticmethod
-    def query_liked_movies() -> list:
-        status = MOVIE_ST_LIKE
+    def query_liked_movies(status: int = MOVIE_ST_LIKE) -> list:
         sql = """SELECT hash, title, cover_addr, addr FROM movie
          where status = ? ;"""
         rows = query_db(sql, parameters=(status,))
         return rows
+
+    @staticmethod
+    def query_downloading_movies(status: int = MOVIE_ST_DOWNLOADING) -> list:
+        sql = """SELECT hash, title, cover_path, movie_path FROM movie
+         where status = ? ;"""
+        rows = query_db(sql, parameters=(status,))
+        return rows
+
+    @staticmethod
 
     @staticmethod
     def update_status(movies: list) -> int:

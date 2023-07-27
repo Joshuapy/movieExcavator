@@ -92,3 +92,21 @@ def download_movie():
     finally:
         end = time.time()
         logger.info("submit task use %.2s s", end - start)
+
+
+def asker_cover():
+    """
+    检测封面下载任务是否下载完成，回写文件路劲
+    """
+    manager = MovieDbManager()
+    rows = manager.query_downloading_movies()
+    logger.info("Got downloading movies %s.", len(rows))
+    client = Aria2Client(host=aria2_host, secret=aria2_secret)
+    for row in rows:
+        hash_id, title, cover_gid, movie_gid = row
+        if cover_gid:
+            result = client.tell_status(cover_gid)
+            if result['status'] == "complete":
+                cover_path = result['files']['path']
+                print(cover_path)
+

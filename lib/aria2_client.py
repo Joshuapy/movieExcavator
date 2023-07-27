@@ -74,6 +74,30 @@ class Aria2Client(object):
         return r
 
     def tell_status(self, gid: str) -> dict:
+        """
+        :return:
+        {'bitfield': 'f0',
+         'completedLength': '65536',
+         'connections': '0',
+         'dir': '/downloads',
+         'downloadSpeed': '0',
+         'files': [{'completedLength': '65536',
+                    'index': '1',
+                    'length': '79574',
+                    'path': '[METADATA]阳光电影www.ygdy8.com.门徒.2007.1080p.国粤双语中字.mkv',
+                    'selected': 'true',
+                    'uris': []}],
+         'gid': '4312f93e75f4fb13',
+         'infoHash': 'e5839d842fa369b53c40e519441415bef1312545',
+         'numPieces': '5',
+         'numSeeders': '0',
+         'pieceLength': '16384',
+         'seeder': 'false',
+         'status': 'active',
+         'totalLength': '79574',
+         'uploadLength': '0',
+         'uploadSpeed': '0'}
+        """
         method = "aria2.tellStatus"
         # params = [gid, ['gid', 'status', 'errorMessage']]
         params = [gid]
