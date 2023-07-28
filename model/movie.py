@@ -107,8 +107,6 @@ class MovieDbManager(object):
         return rows
 
     @staticmethod
-
-    @staticmethod
     def update_status(movies: list) -> int:
         sql = """
         UPDATE movie SET status = :status where hash = :hash; """
@@ -120,6 +118,20 @@ class MovieDbManager(object):
         sql = """
         UPDATE movie SET cover_path = :cover_path, movie_path = :movie_path,
         status = :status where hash = :hash; """
+        count = modified_db(sql, movies, many=True)
+        return count
+
+    @staticmethod
+    def update_cover_path(movies: list) -> int:
+        sql = """
+        UPDATE movie SET cover_path = :cover_path where hash = :hash; """
+        count = modified_db(sql, movies, many=True)
+        return count
+
+    @staticmethod
+    def update_movie_path(movies: list) -> int:
+        sql = """
+        UPDATE movie SET movie_path = :movie_path, status = :status where hash = :hash; """
         count = modified_db(sql, movies, many=True)
         return count
 

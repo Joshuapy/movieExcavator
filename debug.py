@@ -12,7 +12,7 @@ def main():
     init_table(DDL)
     dytt_gather()
     run()
-    StatsUpdater().run()
+    # StatsUpdater().run()
 
 
 if __name__ == '__main__':

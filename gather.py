@@ -73,6 +73,7 @@ class DyttGather(BaseGather):
         try:
             resp = self.session.get(uri, headers=header)
             resp.encoding = resp.apparent_encoding
+            logger.info("detial page: %s access: %s", uri, resp.status_code)
         except Exception as e:
             logger.error("Access detail [%s] error: %s", uri, e)
         else:
@@ -149,6 +150,7 @@ class DyttGather(BaseGather):
             self._parse_line(m, token)
 
         self._add_movie(m)
+        logger.info("detail page parse ok: %s", m.title)
 
     @staticmethod
     def meta_redirect(original_url, text):

@@ -102,4 +102,5 @@ class Aria2Client(object):
         # params = [gid, ['gid', 'status', 'errorMessage']]
         params = [gid]
         r = self.call(method, params, need_secret=True)
+        logger.debug(r)
         return r

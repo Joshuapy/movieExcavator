@@ -30,7 +30,7 @@ class TestClient(object):
 
     def test_tell_status(self):
         # gid = "a6b7609c9b671def"
-        gid = "ad73d49620da85c1"
+        gid = "7990018480670e5d"
         c = Aria2Client(host=aria2_host, port=6800, secret=aria2_secret)
         r = c.tell_status(gid)
         if hasattr(r, 'bittorrent'):

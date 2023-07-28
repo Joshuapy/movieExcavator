@@ -2,10 +2,12 @@
 # 时间：23.7.19
 
 import logging
+import os.path
 import time
+from pprint import pprint
 
 from lib.aria2_client import Aria2Client
-from model.movie import (MovieDbManager, MOVIE_ST_DOWNLOADING)
+from model.movie import (MovieDbManager, MOVIE_ST_DOWNLOADING, MOVIE_ST_DONE)
 from config import aria2_host, aria2_secret
 
 logger = logging.getLogger(__name__)
@@ -85,6 +87,67 @@ class StatsUpdater(object):
         self.update_stats()
 
 
+class StatsAsker(object):
+    def __init__(self):
+        self.movies = []
+        self.client = Aria2Client(host=aria2_host, secret=aria2_secret)
+        self.manager = MovieDbManager()
+
+    def get_movies(self):
+        self.movies = self.manager.query_downloading_movies()
+        logger.info("Got downloading movies %s.", len(self.movies))
+
+    def ask_cover(self):
+        data = []
+        for movie in self.movies:
+            hash_id, title, cover_gid, _ = movie
+            if cover_gid and not os.path.isabs(cover_gid):
+                try:
+                    result = self.client.tell_status(cover_gid)
+                    status = result.get('status', 'unknown')
+                    logger.info("cover Task: %s, title: %s, status is: %s", cover_gid, title, status)
+                    if status == "complete":
+                        cover_path = result['files'][0]['path']
+                        data.append({'hash': hash_id, 'cover_path': cover_path})
+                except Exception as e:
+                    logger.exception("get status from aria2 error: %s", e)
+            else:
+                logger.info("no available cover gid: %s, for titile: %s", cover_gid, title)
+
+        if data:
+            c = self.manager.update_cover_path(data)
+            logger.info("update cover path: %s", c)
+
+    def ask_movie(self):
+        data = []
+        for movie in self.movies:
+            hash_id, title, _, movie_gid = movie
+            if movie_gid:
+                result = self.client.tell_status(movie_gid)
+                status = result.get('status', 'unknown')
+                logger.info("MetaTask: %s, title: %s, status is: %s", movie_gid, title, status)
+                pprint(result)
+
+                if 'followedBy' in result:
+                    gid = result.get('followedBy')[0]
+                    result2 = self.client.tell_status(gid)
+                    status = result2.get('status', 'unknown')
+                    logger.info("MovieTask: %s, title: %s, status is: %s", gid, title, status)
+                    if status == "complete":
+                        movie_path = result2['files'][0]['path']
+                        data.append({'hash': hash_id, 'movie_path': movie_path, 'status': MOVIE_ST_DONE})
+                else:
+                    logger.info("not followedby, for gid: %s, title: %s", movie_gid, title)
+        if data:
+            c = self.manager.update_movie_path(data)
+            logger.info("update movie path: %s", c)
+
+    def run(self):
+        self.get_movies()
+        self.ask_cover()
+        self.ask_movie()
+
+
 def download_movie():
     start = time.time()
     try:
@@ -94,19 +157,10 @@ def download_movie():
         logger.info("submit task use %.2s s", end - start)
 
 
-def asker_cover():
-    """
-    检测封面下载任务是否下载完成，回写文件路劲
-    """
-    manager = MovieDbManager()
-    rows = manager.query_downloading_movies()
-    logger.info("Got downloading movies %s.", len(rows))
-    client = Aria2Client(host=aria2_host, secret=aria2_secret)
-    for row in rows:
-        hash_id, title, cover_gid, movie_gid = row
-        if cover_gid:
-            result = client.tell_status(cover_gid)
-            if result['status'] == "complete":
-                cover_path = result['files']['path']
-                print(cover_path)
-
+def ask_movie_stats():
+    start = time.time()
+    try:
+        StatsAsker().run()
+    finally:
+        end = time.time()
+        logger.info("ask stats use %.2s s", end - start)

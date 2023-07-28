@@ -7,7 +7,7 @@ from apscheduler.schedulers.background import BlockingScheduler
 # tasks
 from gather import dytt_gather
 from judgment import run as judge_movie
-from stats import download_movie
+from stats import download_movie, ask_movie_stats
 
 
 def make_scheduler():
@@ -31,4 +31,5 @@ def make_scheduler():
     sch.add_job(dytt_gather, "cron", hour="20", day="*")
     sch.add_job(judge_movie, "cron", minute="30", hour="20", day="*")
     sch.add_job(download_movie, "cron", minute="40", hour="10", day="*")
+    sch.add_job(ask_movie_stats, "cron", minute="10", hour="*/2")
     return sch
