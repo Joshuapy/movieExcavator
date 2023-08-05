@@ -110,7 +110,7 @@ class StatsAsker(object):
                         cover_path = result['files'][0]['path']
                         data.append({'hash': hash_id, 'cover_path': cover_path})
                 except Exception as e:
-                    logger.exception("get status from aria2 error: %s", e)
+                    logger.error("get status from aria2 error: %s", e)
             else:
                 logger.info("no available cover gid: %s, for titile: %s", cover_gid, title)
 
