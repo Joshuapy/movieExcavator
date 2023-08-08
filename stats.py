@@ -123,21 +123,24 @@ class StatsAsker(object):
         for movie in self.movies:
             hash_id, title, _, movie_gid = movie
             if movie_gid:
-                result = self.client.tell_status(movie_gid)
-                status = result.get('status', 'unknown')
-                logger.info("MetaTask: %s, title: %s, status is: %s", movie_gid, title, status)
-                pprint(result)
-
-                if 'followedBy' in result:
-                    gid = result.get('followedBy')[0]
-                    result2 = self.client.tell_status(gid)
-                    status = result2.get('status', 'unknown')
-                    logger.info("MovieTask: %s, title: %s, status is: %s", gid, title, status)
-                    if status == "complete":
-                        movie_path = result2['files'][0]['path']
-                        data.append({'hash': hash_id, 'movie_path': movie_path, 'status': MOVIE_ST_DONE})
+                try:
+                    result = self.client.tell_status(movie_gid)
+                except Exception as e:
+                    logger.error("get status from aria2 error: %s", e)
                 else:
-                    logger.info("not followedby, for gid: %s, title: %s", movie_gid, title)
+                    status = result.get('status', 'unknown')
+                    logger.info("MetaTask: %s, title: %s, status is: %s", movie_gid, title, status)
+
+                    if 'followedBy' in result:
+                        gid = result.get('followedBy')[0]
+                        result2 = self.client.tell_status(gid)
+                        status = result2.get('status', 'unknown')
+                        logger.info("MovieTask: %s, title: %s, status is: %s", gid, title, status)
+                        if status == "complete":
+                            movie_path = result2['files'][0]['path']
+                            data.append({'hash': hash_id, 'movie_path': movie_path, 'status': MOVIE_ST_DONE})
+                    else:
+                        logger.info("not followedby, for gid: %s, title: %s", movie_gid, title)
         if data:
             c = self.manager.update_movie_path(data)
             logger.info("update movie path: %s", c)
