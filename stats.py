@@ -128,28 +128,31 @@ class StatsAsker(object):
         data = []
         for movie in self.movies:
             hash_id, title, _, movie_gid = movie
-            if movie_gid:
-                try:
-                    result = self.client.tell_status(movie_gid)
-                except Exception as e:
-                    logger.error("get status from aria2 error: %s", e)
-                else:
-                    status = result.get('status', 'unknown')
-                    logger.info("MetaTask: %s, title: %s, status is: %s", movie_gid, title, status)
+            if not movie_gid:
+                logger.info("no gid for %s", title)
+                continue
 
-                    if 'followedBy' in result:
-                        gid = result.get('followedBy')[0]
-                        result2 = self.client.tell_status(gid)
-                        status = result2.get('status', 'unknown')
-                        logger.info("MovieTask: %s, title: %s, status is: %s", gid, title, status)
-                        if status == "complete":
-                            movie_path = result2['files'][0]['path']
-                            data.append({'hash': hash_id,
-                                         'movie_path': movie_path,
-                                         'title': title,
-                                         'status': MOVIE_ST_DONE})
-                    else:
-                        logger.info("not followedby, for gid: %s, title: %s", movie_gid, title)
+            try:
+                result = self.client.tell_status(movie_gid)
+            except Exception as e:
+                logger.error("get status from aria2 error: %s", e)
+            else:
+                status = result.get('status', 'unknown')
+                logger.info("MetaTask: %s, title: %s, status is: %s", movie_gid, title, status)
+
+                if 'followedBy' in result:
+                    gid = result.get('followedBy')[0]
+                    result2 = self.client.tell_status(gid)
+                    status = result2.get('status', 'unknown')
+                    logger.info("MovieTask: %s, title: %s, status is: %s", gid, title, status)
+                    if status == "complete":
+                        movie_path = result2['files'][0]['path']
+                        data.append({'hash': hash_id,
+                                     'movie_path': movie_path,
+                                     'title': title,
+                                     'status': MOVIE_ST_DONE})
+                else:
+                    logger.info("not followedby, for gid: %s, title: %s", movie_gid, title)
 
         # 移动电影至媒体库
         if self.is_flag_file_exists():  # 判断媒体库是否挂载
@@ -159,10 +162,12 @@ class StatsAsker(object):
                 try:
                     dst = self.putaway_2_media(src, title)
                 except Exception as e:
-                    pass
+                    logger.error("rename file: %s error: %s", src, e)
                 else:
                     movie_info['movie_path'] = dst
                     self.manager.update_movie_done(movie_info)
+        else:
+            logger.info("no flag file for media.")
 
     @staticmethod
     def is_flag_file_exists() -> bool:

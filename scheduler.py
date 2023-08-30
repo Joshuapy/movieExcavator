@@ -31,5 +31,5 @@ def make_scheduler():
     sch.add_job(dytt_gather, "cron", hour="20", day="*")
     sch.add_job(judge_movie, "cron", minute="30", hour="20", day="*")
     sch.add_job(download_movie, "cron", minute="40", hour="1", day="*")
-    sch.add_job(ask_movie_stats, "cron", minute="10", hour="*/2")
+    sch.add_job(ask_movie_stats, "cron", minute="10", hour="*")
     return sch
