@@ -166,6 +166,7 @@ class StatsAsker(object):
                 else:
                     movie_info['movie_path'] = dst
                     self.manager.update_movie_done(movie_info)
+                    logger.info("movie: %s downloaded.", title)
         else:
             logger.info("no flag file for media.")
 
@@ -182,6 +183,7 @@ class StatsAsker(object):
         suffix = Path(src).suffix
         dst = f"/movies/{title}{suffix}"
         shutil.move(src, dst)
+        logger.info("movie: %s putaway done.", dst)
         return dst
 
     def run(self):
