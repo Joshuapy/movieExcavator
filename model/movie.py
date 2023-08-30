@@ -135,6 +135,12 @@ class MovieDbManager(object):
         count = modified_db(sql, movies, many=True)
         return count
 
+    @staticmethod
+    def update_movie_done(movie_ifo: dict) -> int:
+        sql = """
+        UPDATE movie SET movie_path = :movie_path, status = :status where hash = :hash; """
+        count = modified_db(sql, movie_ifo)
+        return count
 
     @staticmethod
     def is_exists(hash_id: str) -> bool:

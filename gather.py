@@ -287,7 +287,6 @@ class DyttGather(BaseGather):
         logger.info("Fetch %s uri from homepage.", len(self._movie_hash))
 
         if self._movie_hash:
-            # TODO: 暂时用循环,后续改成并发
             for hash_id, uri in self._movie_hash.items():
                 # 判断数据库是否已存在,如果存在则忽略
                 if self._movie_dbmanager.is_exists(hash_id):
