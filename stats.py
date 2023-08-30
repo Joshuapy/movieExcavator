@@ -4,8 +4,8 @@
 import logging
 import os.path
 import time
+import shutil
 from pathlib import Path
-from pprint import pprint
 
 from lib.aria2_client import Aria2Client
 from model.movie import (MovieDbManager, MOVIE_ST_DOWNLOADING, MOVIE_ST_DONE)
@@ -179,12 +179,10 @@ class StatsAsker(object):
         """
         将下载好的电影传输至媒体库目录, 规范电影名
         """
-        dst_dir = Path("/movies")
-        src_pathobj = Path(src)
-        suffix = src_pathobj.suffix  # 后缀
-        dst = dst_dir / f"{title}{suffix}"
-        src_pathobj.rename(dst)
-        return str(dst)
+        suffix = Path(src).suffix
+        dst = f"/movies/{title}{suffix}"
+        shutil.move(src, dst)
+        return dst
 
     def run(self):
         self.get_movies()
