@@ -4,7 +4,8 @@
 import logging
 import os.path
 import time
-from pprint import pprint
+import shutil
+from pathlib import Path
 
 from lib.aria2_client import Aria2Client
 from model.movie import (MovieDbManager, MOVIE_ST_DOWNLOADING, MOVIE_ST_DONE)
@@ -37,7 +38,7 @@ class StatsUpdater(object):
 
     def get_movies(self):
         """
-        查询待评审的电影条目（status=0）
+        查询待下载的电影条目（status=2）
         return: list of SimpleMovie
         """
         manager = MovieDbManager()
@@ -50,15 +51,16 @@ class StatsUpdater(object):
         提交下载
         """
         for movie in self.movies:
-            if movie.cover_addr:
-                try:
-                    # 将任务ID暂存在path字段中
-                    movie.cover_path = self.client.add_uri(movie.cover_addr)
-                    logger.info("submitted cover downlaod task: %s", movie.title)
-                except Exception as e:
-                    logger.exception("Submit cover task for: %s  error: %s", movie.title, e)
-            else:
-                logger.info("Cover of %s is None.", movie.title)
+            # 8.30 取消封面下载，利用jellyfin搜刮功能自动下载封面
+            # if movie.cover_addr:
+            #     try:
+            #         # 将任务ID暂存在path字段中
+            #         movie.cover_path = self.client.add_uri(movie.cover_addr)
+            #         logger.info("submitted cover downlaod task: %s", movie.title)
+            #     except Exception as e:
+            #         logger.exception("Submit cover task for: %s  error: %s", movie.title, e)
+            # else:
+            #     logger.info("Cover of %s is None.", movie.title)
 
             if movie.addr:
                 try:
@@ -70,7 +72,8 @@ class StatsUpdater(object):
             else:
                 logger.info("Addr of %s is None.", movie.title)
 
-            if movie.cover_path or movie.movie_path:
+            # if movie.cover_path or movie.movie_path:
+            if movie.movie_path:
                 movie.status = MOVIE_ST_DOWNLOADING
 
     def update_stats(self):
@@ -113,7 +116,7 @@ class StatsAsker(object):
                         cover_path = result['files'][0]['path']
                         data.append({'hash': hash_id, 'cover_path': cover_path})
                 except Exception as e:
-                    logger.exception("get status from aria2 error: %s", e)
+                    logger.error("get status from aria2 error: %s", e)
             else:
                 logger.info("no available cover gid: %s, for titile: %s", cover_gid, title)
 
@@ -122,14 +125,23 @@ class StatsAsker(object):
             logger.info("update cover path: %s", c)
 
     def ask_movie(self):
+        """
+        查询电影下载状态
+        """
         data = []
         for movie in self.movies:
             hash_id, title, _, movie_gid = movie
-            if movie_gid:
+            if not movie_gid:
+                logger.info("no gid for %s", title)
+                continue
+
+            try:
                 result = self.client.tell_status(movie_gid)
+            except Exception as e:
+                logger.error("get status from aria2 error: %s", e)
+            else:
                 status = result.get('status', 'unknown')
                 logger.info("MetaTask: %s, title: %s, status is: %s", movie_gid, title, status)
-                pprint(result)
 
                 if 'followedBy' in result:
                     gid = result.get('followedBy')[0]
@@ -138,16 +150,48 @@ class StatsAsker(object):
                     logger.info("MovieTask: %s, title: %s, status is: %s", gid, title, status)
                     if status == "complete":
                         movie_path = result2['files'][0]['path']
-                        data.append({'hash': hash_id, 'movie_path': movie_path, 'status': MOVIE_ST_DONE})
+                        data.append({'hash': hash_id,
+                                     'movie_path': movie_path,
+                                     'title': title,
+                                     'status': MOVIE_ST_DONE})
                 else:
                     logger.info("not followedby, for gid: %s, title: %s", movie_gid, title)
-        if data:
-            c = self.manager.update_movie_path(data)
-            logger.info("update movie path: %s", c)
+
+        # 移动电影至媒体库
+        if self.is_flag_file_exists():  # 判断媒体库是否挂载
+            for movie_info in data:
+                src = movie_info['movie_path']
+                title = movie_info['title']
+                try:
+                    dst = self.putaway_2_media(src, title)
+                except Exception as e:
+                    logger.error("rename file: %s error: %s", src, e)
+                else:
+                    movie_info['movie_path'] = dst
+                    self.manager.update_movie_done(movie_info)
+                    logger.info("movie: %s downloaded.", title)
+        else:
+            logger.info("no flag file for media.")
+
+    @staticmethod
+    def is_flag_file_exists() -> bool:
+        filename = "/movies/mounted"
+        return Path(filename).exists()
+
+    @staticmethod
+    def putaway_2_media(src, title: str) -> str:
+        """
+        将下载好的电影传输至媒体库目录, 规范电影名
+        """
+        suffix = Path(src).suffix
+        dst = f"/movies/{title}{suffix}"
+        shutil.move(src, dst)
+        logger.info("movie: %s putaway done.", dst)
+        return dst
 
     def run(self):
         self.get_movies()
-        self.ask_cover()
+        # self.ask_cover()  # 8.30 取消封面下载
         self.ask_movie()
 
 

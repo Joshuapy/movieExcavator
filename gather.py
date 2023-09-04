@@ -55,6 +55,7 @@ class DyttGather(BaseGather):
         "Referer": "https://www.baidu.com/link?url=u5csmrd0v3OeGNX4MLsOKS6_jZzFV2qsaJyK1Vhvqk3&wd=&eqid=b3b7b46b0002d25200000003649163c7",
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"
     }
+    ignore_hashID = ["50523"]
 
     def __init__(self):
         super().__init__()
@@ -190,10 +191,14 @@ class DyttGather(BaseGather):
         uri = tag_a.get('href')
         hash_id = self._parse_hash_id(uri)
         uri = self.base_host + uri
+        if hash_id in self.ignore_hashID:
+            logger.warning("ignore hash id: %s", hash_id)
+            return
+
         self._movie_hash.setdefault(hash_id, uri)
 
     @staticmethod
-    def _parse_hash_id(uri):
+    def _parse_hash_id(uri) -> str:
         """
         '/html/gndy/jddy/20160320/50523.html' -> '50523'
         """
@@ -282,7 +287,6 @@ class DyttGather(BaseGather):
         logger.info("Fetch %s uri from homepage.", len(self._movie_hash))
 
         if self._movie_hash:
-            # TODO: 暂时用循环,后续改成并发
             for hash_id, uri in self._movie_hash.items():
                 # 判断数据库是否已存在,如果存在则忽略
                 if self._movie_dbmanager.is_exists(hash_id):

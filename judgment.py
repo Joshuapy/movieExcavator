@@ -57,20 +57,20 @@ class TagsBackends(BaseBackends):
         "西部": 0,
         "科幻": 10,
         "犯罪": 0,
-        "爱情": 0,
+        "爱情": 10,
         "灾难": 10,
         "武侠": 5,
         "歌舞": 0,
         "战争": 10,
         "惊悚": 0,
-        "悬疑": 0,
+        "悬疑": 5,
         "恐怖": -10,
         "家庭": 0,
         "奇幻": 10,
-        "喜剧": 0,
+        "喜剧": 5,
         "同性": -10,
         "古装": 0,
-        "历史": 0,
+        "历史": 5,
         "动画": 5,
         "动作": 5,
         "剧情": 0,
@@ -79,7 +79,6 @@ class TagsBackends(BaseBackends):
     }
 
     def check(self, m: SimpleMovie) -> bool:
-        # TODO
         if m.tags is None:
             return False
         tag_list = m.tags.split(",")
