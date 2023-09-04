@@ -5,4 +5,3 @@ logs/*
 movies.db
 bin/*
 .DS_store
-config.py
