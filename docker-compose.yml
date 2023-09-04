@@ -1,0 +1,90 @@
+version: "3"
+
+services:
+    jellyfin:
+      image: linuxserver/jellyfin:latest
+      container_name: jellyfin
+      devices:
+        - /dev/dri:/dev/dri
+      environment:
+        - PUID=0
+        - PGID=0
+        - TZ=Asia/Shanghai
+      volumes:
+        - ./jellyfin_config:/config
+        - /home/joshua/MyPassport/movies:/data/movies
+        - /home/joshua/MyPassport/movies/documentary:/data/documentary
+      ports:
+        - 127.0.0.1:8096:8096
+      privileged: true
+      extra_hosts:
+        - "image.tmdb.org:143.244.50.85"
+        - "api.themoviedb.org:143.204.126.6"
+        - "api.themoviedb.org:143.204.126.22"
+        - "api.themoviedb.org:143.204.126.104"
+        - "www.themoviedb.org:99.86.199.99"
+        - "www.themoviedb.org:99.86.199.23"
+        - "www.themoviedb.org:99.86.199.8"
+      restart: unless-stopped
+      networks:
+        - movieExcavator
+
+    AriaNg:
+      image: p3terx/ariang
+      container_name: ariang
+      ports:
+        - 127.0.0.1:6880:6880
+      restart: unless-stopped
+      logging:
+        options:
+          max-size: 1m
+      networks:
+        - movieExcavator
+
+    Aria2-Pro:
+      image: p3terx/aria2-pro
+      container_name: aria2pro
+      restart: unless-stopped
+      ports:
+        - 127.0.0.1:6800:6800
+        - 127.0.0.1:6888:6888
+        - 127.0.0.1:6888:6888/udp
+      environment:
+        - PUID=$UID
+        - PGID=$GID
+        - UMASK_SET=022
+        - RPC_SECRET=movieexcavator2023
+        - RPC_PORT=6800
+        - LISTEN_PORT=6888
+        - TZ=Asia/Shanghai
+        - DISK_CACHE=64M
+        - IPV6_MODE=false
+      volumes:
+        - ./aria2-config:/config
+        - ./downloads:/downloads
+      logging:
+        options:
+          max-size: 1m
+      networks:
+        - movieExcavator
+
+    MovieExcavator:
+      image: movie:latest
+      container_name: movie_excavator
+      restart: unless-stopped
+      volumes:
+        - ./data:/app/data
+        - ./logs:/app/logs
+        - ./downloads:/downloads
+        - /home/joshua/MyPassport/movies:/movies
+      environment:
+        - MOVIE_ARIA2_HOST=http://aria2pro
+        - MOVIE_ARIA2_PORT=6800
+        - MOVIE_ARIA2_SECRET=movieexcavator2023
+      networks:
+        - movieExcavator
+
+networks:
+  movieExcavator:
+    name: movie_excavator
+    external: false

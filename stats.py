@@ -8,9 +8,12 @@ from pprint import pprint
 
 from lib.aria2_client import Aria2Client
 from model.movie import (MovieDbManager, MOVIE_ST_DOWNLOADING, MOVIE_ST_DONE)
-from config import aria2_host, aria2_secret
+from config import settings
 
 logger = logging.getLogger(__name__)
+
+aria2_host = settings.get("aria2_host", "http://aria2pro")
+aria2_secret = settings.get("aria2_secret", "aria2_secret")
 
 
 class MovieLink(object):
