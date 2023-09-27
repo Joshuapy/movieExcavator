@@ -81,8 +81,10 @@ func main() {
 		// reset status
 	case "-h", "--help":
 		showCmd.Usage()
+		resetCmd.Usage()
 	default:
 		fmt.Println("Unknow cmd:", os.Args[1])
 		showCmd.Usage()
+		resetCmd.Usage()
 	}
 }
