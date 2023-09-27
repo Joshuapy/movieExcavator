@@ -8,16 +8,20 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"os"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const dbfile string = "/Users/joshua/repo/github.com/MovieExcavator/data/movies.db"
+var dbfile string = os.Getenv("MOVIE_DB")
 
 func CheckImportOk() string {
 	return "ok"
 }
 func getConn() *sql.DB {
+	if dbfile == "" {
+		log.Fatal("env MOVIE_DB is empty!")
+	}
 	db, err := sql.Open("sqlite3", dbfile)
 	if err != nil {
 		log.Fatal(err)
