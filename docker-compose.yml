@@ -38,6 +38,9 @@ services:
       logging:
         options:
           max-size: 1m
+      environment:
+        - PUID=$UID
+        - PGID=$GID
       networks:
         - movieExcavator
 
@@ -78,7 +81,9 @@ services:
         - ./downloads:/downloads
         - /home/joshua/MyPassport/movies:/movies
       environment:
-        - MOVIE_ARIA2_HOST=http://aria2pro
+        - PUID=$UID
+        - PGID=$GID
+        - MOVIE_ARIA2_HOST=http://Aria2-Pro
         - MOVIE_ARIA2_PORT=6800
         - MOVIE_ARIA2_SECRET=movieexcavator2023
       networks:
