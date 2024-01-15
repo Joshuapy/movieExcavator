@@ -8,20 +8,21 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
+
+	// "os"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var dbfile string = os.Getenv("MOVIE_DB")
+// var dbfile string = os.Getenv("MOVIE_DB")
 
 func CheckImportOk() string {
 	return "ok"
 }
-func getConn() *sql.DB {
-	if dbfile == "" {
-		log.Fatal("env MOVIE_DB is empty!")
-	}
+func getConn(dbfile string) *sql.DB {
+	// if dbfile == "" {
+	// 	log.Fatalf("dbfile: %s is empty!", dbfile)
+	// }
 	db, err := sql.Open("sqlite3", dbfile)
 	if err != nil {
 		log.Fatal(err)
@@ -29,8 +30,8 @@ func getConn() *sql.DB {
 	return db
 }
 
-func queryRowsAndPrint(sql_string string) {
-	db := getConn()
+func queryRowsAndPrint(sql_string, dbfile string) {
+	db := getConn(dbfile)
 	defer db.Close()
 
 	rows, err := db.Query(sql_string)
@@ -50,9 +51,9 @@ func queryRowsAndPrint(sql_string string) {
 
 }
 
-func QueryStatusCount() {
+func QueryStatusCount(dbfile string) {
 	sql_string := "select status, count(status) from movie group by status;"
-	db := getConn()
+	db := getConn(dbfile)
 	defer db.Close()
 
 	var count_like int
@@ -92,24 +93,24 @@ func QueryStatusCount() {
 	fmt.Println("下载完成:", count_downloaded)
 }
 
-func ShowDownloadingMovies() {
+func ShowDownloadingMovies(dbfile string) {
 	sql_string := "select hash, title, tags, score, create_time from movie where status = 3;"
-	queryRowsAndPrint(sql_string)
+	queryRowsAndPrint(sql_string, dbfile)
 }
 
-func ShowUnlinkedMovies(limit int) {
+func ShowUnlinkedMovies(limit int, dbfile string) {
 	sql_temp := "select hash, title, tags, score, create_time from movie where status = 1  order by create_time desc limit %d;"
 	sql_string := fmt.Sprintf(sql_temp, limit)
-	queryRowsAndPrint(sql_string)
+	queryRowsAndPrint(sql_string, dbfile)
 }
 
-func ShowDoneMovies(limit int) {
+func ShowDoneMovies(limit int, dbfile string) {
 	sql_temp := "select hash, title, tags, score, create_time from movie where status = 4 order by create_time desc limit %d;"
 	sql_string := fmt.Sprintf(sql_temp, limit)
-	queryRowsAndPrint(sql_string)
+	queryRowsAndPrint(sql_string, dbfile)
 }
 
-func SetStatus(hashes []string, status int) {
+func SetStatus(hashes []string, status int, dbfile string) {
 	var placeholder string
 	for i := 0; i < len(hashes); i++ {
 		if i == 0 {
@@ -127,7 +128,7 @@ func SetStatus(hashes []string, status int) {
 		values = append(values, v)
 	}
 
-	db := getConn()
+	db := getConn(dbfile)
 	defer db.Close()
 	res, err := db.Exec(sql_temp_with_placeholder, values...)
 	if err != nil {
