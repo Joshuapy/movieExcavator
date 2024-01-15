@@ -9,20 +9,14 @@ import (
 	"fmt"
 	"log"
 
-	// "os"
-
 	_ "github.com/mattn/go-sqlite3"
 )
-
-// var dbfile string = os.Getenv("MOVIE_DB")
 
 func CheckImportOk() string {
 	return "ok"
 }
+
 func getConn(dbfile string) *sql.DB {
-	// if dbfile == "" {
-	// 	log.Fatalf("dbfile: %s is empty!", dbfile)
-	// }
 	db, err := sql.Open("sqlite3", dbfile)
 	if err != nil {
 		log.Fatal(err)
@@ -139,4 +133,29 @@ func SetStatus(hashes []string, status int, dbfile string) {
 		log.Fatal(err)
 	}
 	fmt.Printf("成功设置%d条数据\n", n)
+}
+
+func ShowDetailMovie(dbfile string, movie_hash string) {
+	sql_temp := "select hash, title, tags, score, create_time, description from movie where hash = ?"
+	db := getConn(dbfile)
+	defer db.Close()
+
+	rows, err := db.Query(sql_temp, movie_hash)
+	if err != nil {
+		log.Fatal(err)
+	}
+	for rows.Next() {
+		var hash, title, tags, create_time, description string
+		var score float32
+		err := rows.Scan(&hash, &title, &tags, &score, &create_time, &description)
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("ID: %s\n", hash)
+		fmt.Printf("标题: %s\n", title)
+		fmt.Printf("类别: %s\n", tags)
+		fmt.Printf("分数: %.2f\n", score)
+		fmt.Printf("创建时间: %s\n", create_time)
+		fmt.Printf("描述: %s\n", description)
+	}
 }

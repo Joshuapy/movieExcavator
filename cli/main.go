@@ -48,6 +48,14 @@ func setStatus(hashes []string, status int, dbfile string) {
 	DBdriver.SetStatus(hashes, status, dbfile)
 }
 
+func showDetailmovie(hashes []string, dbfile string) {
+	if n := len(hashes); n != 1 {
+		fmt.Println("mush and only one hash", 1)
+		os.Exit(0)
+	}
+	DBdriver.ShowDetailMovie(dbfile, hashes[0])
+}
+
 func get_dbfile(cmd_dbfile string) (dbfile string) {
 	env_dbfile := os.Getenv(ENV_DBFILE)
 
@@ -84,6 +92,10 @@ func main() {
 	resetCmd.IntVar(&dest_status, "dst", 2, "reset the status to [dst] with special hash of movie, default 1 (1 unlike, 2 like, 3 downloading, 4 done)")
 	resetCmd.StringVar(&cmd_dbfile, "db", "", "special dbfile for query.")
 
+	// 子命令 inspect
+	inspectCmd := flag.NewFlagSet("inspect", flag.ExitOnError)
+	inspectCmd.StringVar(&cmd_dbfile, "db", "", "special dbfile for query.")
+
 	if len(os.Args) < 2 {
 		dbfile = get_dbfile(cmd_dbfile)
 		DBdriver.QueryStatusCount(dbfile)
@@ -106,12 +118,18 @@ func main() {
 		dbfile = get_dbfile(cmd_dbfile)
 		setStatus(resetCmd.Args(), dest_status, dbfile)
 		// reset status
+	case "inspect":
+		inspectCmd.Parse(os.Args[2:])
+		dbfile = get_dbfile(cmd_dbfile)
+		showDetailmovie(inspectCmd.Args(), dbfile)
 	case "-h", "--help":
 		showCmd.Usage()
 		resetCmd.Usage()
+		inspectCmd.Usage()
 	default:
 		fmt.Println("Unknow cmd:", os.Args[1])
 		showCmd.Usage()
 		resetCmd.Usage()
+		inspectCmd.Usage()
 	}
 }
