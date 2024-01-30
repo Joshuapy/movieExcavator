@@ -3,6 +3,7 @@
 from bs4 import BeautifulSoup
 from gather import DyttGather
 from model.movie import Movie
+from pprint import pprint
 
 
 class TestGather(object):
@@ -27,7 +28,7 @@ class TestGather(object):
 
     def test_parse_detail(self):
         m = Movie()
-        with open('test/dytt_detail_page2.html') as f:
+        with open('test/dytt_detail_page.html') as f:
             soup = BeautifulSoup(f.read(), "html.parser")
             DyttGather()._parse_detail(m, soup=soup)
             assert 1 > 0

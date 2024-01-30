@@ -127,8 +127,8 @@ class DyttGather(BaseGather):
         tag_a = tag_content.find('a')
         if tag_a:
             m.addr = tag_a.get('href')  # 下载地址
-            _title = tag_a.find('font', string=re.compile(r"点击下载|磁力链")).string
-            m.title = _title.split()[1]
+            _title = tag_a.find('font', attrs={'size': "4"}).string
+            m.title = _title
         else:
             raise ParseError("Can not fond tag <a> of download addr!")
 
@@ -149,7 +149,6 @@ class DyttGather(BaseGather):
                     token.append(_content)
         if token:
             self._parse_line(m, token)
-
         self._add_movie(m)
         logger.info("detail page parse ok: %s", m.title)
 
@@ -294,13 +293,13 @@ class DyttGather(BaseGather):
                 try:
                     self._http_detail(hash_id, uri)
                 except ParseError as e:
-                    logger.warning(
+                    logger.exception(
                         "Parse DetailPage: [%s] error: %s",
                         hash_id, e)
                 except AttributeError as e:
-                    logger.error(
+                    logger.exception(
                         "Access or Parse DetailPage error: hash_id: %s. msg: %s",
-                        hash_id, e)
+                         hash_id, e)
                 except Exception as e:
                     logger.exception(
                         "Access or Parse DetailPage error: hash_id: %s. msg: %s",
