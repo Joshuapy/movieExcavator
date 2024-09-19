@@ -100,7 +100,7 @@ services:
         - movieExcavator
 
     MovieExcavator:
-      image: movie:latest
+      build: .
       container_name: movie_excavator
       restart: unless-stopped
       volumes:

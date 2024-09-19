@@ -72,6 +72,7 @@ services:
         - movieExcavator
 
     MovieExcavator:
+      build: .
       image: movie:latest
       container_name: movie_excavator
       restart: unless-stopped
