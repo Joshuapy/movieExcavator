@@ -4,3 +4,9 @@ test_*.py
 test
 .venv
 debug.py
+cli
+jellyfin_config
+data
+aria2-config
+downloads
+movies

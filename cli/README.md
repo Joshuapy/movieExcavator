@@ -62,9 +62,22 @@ Total: 479
 ```
 
 - reset
-重置某个电影的判断结果,一般用来将自动判别为忽略的电影为待下载。
+重置某个电影的判断结果,一般用来将自动判别为忽略的电影重新新改成状态成喜欢，后续会自动下载。
 ```
 sudo MOVIE_DB=/opt/data/MovieExcavator/data/movies.db   ./moviectl reset 64512
 dbfile: /opt/data/MovieExcavator/data/movies.db
 成功设置1条数据
+```
+
+- inspect
+查看单个电影的详细信息
+```shell
+./moviectl inspect 65409
+env_dbfile: /opt/data/MovieExcavator/data/movies.db
+ID: 65409
+标题: 哆啦A梦：大雄的地球交响乐.2024.BD.1080P.日语中字
+类别: 科幻,动画,奇幻,冒险
+分数: 6.70
+创建时间: 2024-09-18
+描述: 为了准备学校音乐会的演出，大雄埋头苦练他并不擅长的竖笛。
 ```
