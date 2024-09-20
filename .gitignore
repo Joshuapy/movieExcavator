@@ -3,9 +3,7 @@
 .idea/*
 logs/*
 movies.db
-bin/*
 .DS_store
-moviectl
 jellyfin_config/*
 aria2-config/*
 downloads/*
