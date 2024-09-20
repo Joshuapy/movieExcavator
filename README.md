@@ -124,20 +124,26 @@ networks:
 
 ```
 
-### 启动
+### 初始化
+
+* 构建镜像并启动
 ```
 sudo docker-compose up -d
 ```
 
+* 访问
 1. web端访问jellyfin 并按指引做初始化设置
 访问： http://127.0.0.1:8096
 
 另外，可以通过NGINX自定义反向代理，请自查研究。
 
+
 2. 命令行查询下载信息
-加入DB存储库位置
+
 ```
+# 加入DB存储库位置
 echo 'export MOVIE_DB='$PWD'/data/movies.db' >> ~/.bashrc
+source ~/.bashrc
 
 ./bin/moviectl -h
 
